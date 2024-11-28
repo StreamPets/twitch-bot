@@ -1,7 +1,4 @@
-import uvicorn
-from app import create_app
-
-app = create_app()
+from app import chat_bot
 
 if __name__ == '__main__':
-  uvicorn.run(app, port=5000)
+  chat_bot.run()

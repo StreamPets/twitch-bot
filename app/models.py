@@ -1,77 +1,39 @@
 import time
-from dataclasses import dataclass
 from typing import Optional
 
-from app.consts import LRU_LIMIT
 
+class NotInLruException(KeyError):
+  pass
 
-@dataclass
-class Color:
-  id: int
-  name: str
-  img: str
-  sku: str
-  prev: str
+class UserLru:
 
-  def to_dict(self):
-    return {
-      'id': self.id,
-      'name': self.name,
-      'img': self.img,
-      'sku': self.sku,
-      'prev': self.prev,
-    }
-
-
-@dataclass
-class Viewer:
-  user_id: str
-  username: Optional[str] = None
-  color: Optional[Color] = None
-
-  def __eq__(self, other: object) -> bool:
-    if isinstance(other, Viewer):
-      return self.user_id == other.user_id
-    return False
-
-  def to_dict(self):
-    return {
-      'userID': self.user_id,
-      'username': self.username,
-      'color': self.color.to_dict(),
-    }
-
-
-class UserLRU:
-
-  def __init__(self) -> None:
-    # UserID -> Timestamp
+  def __init__(self, limit) -> None:
     self.timestamps: dict[str,float] = {}
-    # UserID -> Viewer
-    self.viewers: dict[str,Viewer] = {}
+    self.limit = limit
 
-  def add(self, viewer: Viewer) -> Optional[str]:
+  def add(self, user_id: str) -> Optional[str]:
     '''Returns the id of the removed user, or None if no user was removed.'''
-    timestamp = time.time()
+    timestamp = self.update_user(user_id)
 
-    self.timestamps[viewer.user_id] = timestamp
-    self.viewers[viewer.user_id] = viewer
+    if len(self.timestamps) <= self.limit:
+      return None
     
-    if len(self.viewers) > LRU_LIMIT:
-      min_id, min_ts = viewer, timestamp
-      for id, ts in self.timestamps.items():
-        if ts < min_ts:
-          min_id, min_ts = id, ts
+    min_id, min_ts = user_id, timestamp
+    for id, ts in self.timestamps.items():
+      if ts < min_ts:
+        min_id, min_ts = id, ts
 
-      del self.timestamps[min_id]
-      del self.viewers[min_id]
+    del self.timestamps[min_id]
+    return min_id
 
-  def update_user(self, user_id: str) -> None:
-    '''Updates the user's timestamp to the current time.'''
+  # TODO: Test that raising the error does not break bot execution
+  def update_user(self, user_id: str) -> float:
+    '''Updates the user's timestamp to the current time.
+    Raises an exception if user_id not already present.'''
+    if user_id not in self.timestamps:
+      raise NotInLruException(f"The user id {user_id} was not present")
     self.timestamps[user_id] = time.time()
-
-  def get_viewers(self) -> list[Viewer]:
-    return list(self.viewers.values())
+    return self.timestamps[user_id]
 
   def __contains__(self, user_id: str) -> bool:
     return user_id in self.timestamps

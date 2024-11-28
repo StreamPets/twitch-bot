@@ -1,35 +1,28 @@
 from twitchio.ext import commands
 
-from app.announcers import MultiChannelAnnouncer
-from app.database import Database
-from app.models import Viewer, UserLRU
+from app.api import ApiService
+from app.models import UserLru
 
 from app.config import (
   BOT_NAMES,
   BOT_PREFIX,
   BOT_TOKEN,
+  LRU_LIMIT,
 )
 
-
 class ChatBot(commands.Bot):
-  def __init__(self, db: Database, announcer: MultiChannelAnnouncer):
+  def __init__(self, api: ApiService):
     super().__init__(
       token=BOT_TOKEN,
       prefix=BOT_PREFIX,
       initial_channels=[],
     )
-    self.announcer = announcer
-    self.db = db
+    self.api = api
 
     # ChannelName -> LruList
-    self.lru: dict[str,UserLRU] = {}
+    self.lru: dict[str,UserLru] = {}
 
     self.load_module("app.commands")
-
-  def get_users(self, channel_name: str) -> list[Viewer]:
-    if channel_name not in self.lru:
-      self.lru[channel_name] = UserLRU()
-    return self.lru[channel_name].get_viewers()
 
   async def event_message(self, message):
     if not message.author or message.author.name in BOT_NAMES:
@@ -40,18 +33,14 @@ class ChatBot(commands.Bot):
     username = message.author.name
 
     if channel_name not in self.lru:
-      self.lru[channel_name] = UserLRU()
+      self.lru[channel_name] = UserLru(LRU_LIMIT)
 
     if user_id not in self.lru[channel_name]:
-      channel_id = self.db.get_channel_id(channel_name)
-      color = self.db.get_current_color(user_id, channel_id)
-      viewer = Viewer(user_id, username, color)
+      self.api.announce_join(channel_name, user_id, username)
 
-      removed_id = self.lru[channel_name].add(viewer)
+      removed_id = self.lru[channel_name].add(user_id)
       if removed_id:
-        self.announcer.announce_part(channel_name, removed_id)
-
-      self.announcer.announce_join(channel_name, viewer)
+        self.api.announce_part(channel_name, removed_id)
     else:
       self.lru[channel_name].update_user(user_id)
 

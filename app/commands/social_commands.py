@@ -8,4 +8,4 @@ class SocialCommands(commands.Cog):
 
   @commands.command(name='discord')
   async def command_discord(self, ctx):
-    await ctx.send('https://discord.gg/kxcMEp8')
+    await ctx.send('https://discord.gg/S2MDMqk')
