@@ -43,8 +43,3 @@ class ChatBot(commands.Bot):
         self.api.announce_part(channel_name, removed_id)
 
     await self.handle_commands(message)
-    
-  @commands.command(name='commands')
-  async def command_commands(self, ctx: commands.Context):
-    commands = [f"!{command}" for command in self.commands.keys()]
-    await ctx.send(' '.join(commands))
