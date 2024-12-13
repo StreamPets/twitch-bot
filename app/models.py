@@ -13,7 +13,8 @@ class UserLru:
 
   def add(self, user_id: str) -> Optional[str]:
     '''Returns the id of the removed user, or None if no user was removed.'''
-    timestamp = self.update_user(user_id)
+    timestamp = time.time()
+    self.timestamps[user_id] = timestamp
 
     if len(self.timestamps) <= self.limit:
       return None
@@ -26,7 +27,6 @@ class UserLru:
     del self.timestamps[min_id]
     return min_id
 
-  # TODO: Test that raising the error does not break bot execution
   def update_user(self, user_id: str) -> float:
     '''Updates the user's timestamp to the current time.
     Raises an exception if user_id not already present.'''

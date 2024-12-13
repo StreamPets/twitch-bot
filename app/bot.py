@@ -15,11 +15,10 @@ class ChatBot(commands.Bot):
     super().__init__(
       token=BOT_TOKEN,
       prefix=BOT_PREFIX,
-      initial_channels=[],
+      initial_channels=["ljrexcodes"],
     )
     self.api = api
 
-    # ChannelName -> LruList
     self.lru: dict[str,UserLru] = {}
 
     self.load_module("app.commands")
@@ -35,14 +34,13 @@ class ChatBot(commands.Bot):
     if channel_name not in self.lru:
       self.lru[channel_name] = UserLru(LRU_LIMIT)
 
-    if user_id not in self.lru[channel_name]:
+    if user_id in self.lru[channel_name]:
+      self.lru[channel_name].update_user(user_id)
+    else:
       self.api.announce_join(channel_name, user_id, username)
-
       removed_id = self.lru[channel_name].add(user_id)
       if removed_id:
         self.api.announce_part(channel_name, removed_id)
-    else:
-      self.lru[channel_name].update_user(user_id)
 
     await self.handle_commands(message)
     

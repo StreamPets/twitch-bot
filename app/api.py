@@ -1,4 +1,3 @@
-from urllib.parse import urlparse
 import requests
 
 
@@ -8,32 +7,22 @@ class ApiService:
     self.api_url = api_url
 
   def announce_join(self, channel_name: str, user_id: str, username: str) -> None:
-    url = urlparse(self.api_url, "join")
-    requests.post(url, {
-      'channel_name': channel_name,
+    url = f"{self.api_url}/channels/{channel_name}/viewers"
+    requests.post(url, json={
       'user_id': user_id,
       'username': username,
     })
 
   def announce_part(self, channel_name: str, user_id: str) -> None:
-    url = urlparse(self.api_url, "part")
-    requests.delete(url, {
-      'channel_name': channel_name,
-      'user_id': user_id,
-    })
+    url = f"{self.api_url}/channels/{channel_name}/viewers/{user_id}"
+    requests.delete(url)
 
   def announce_color(self, channel_name: str, user_id: str, color: str) -> None:
-    url = urlparse(self.api_url, "color")
-    requests.put(url, {
-      'channel_name': channel_name,
-      'user_id': user_id,
-      'color': color,
+    url = f"{self.api_url}/channels/{channel_name}/viewers/{user_id}"
+    requests.put(url, json={
+      'item_name': color,
     })
 
   def announce_jump(self, channel_name: str, user_id: str) -> None:
-    url = urlparse(self.api_url, "action")
-    requests.post(url, {
-      'channel_name': channel_name,
-      'user_id': user_id,
-      'action': 'jump'
-    })
+    url = f"{self.api_url}/channels/{channel_name}/viewers/{user_id}/JUMP"
+    requests.post(url)
