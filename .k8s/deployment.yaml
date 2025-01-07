@@ -19,5 +19,5 @@ spec:
       - name: streampets-bot-container
         image: ljheal/streampets-bot:latest
         envFrom:
-        - secretKeyRef:
+        - secretRef:
             name: twitch-env
