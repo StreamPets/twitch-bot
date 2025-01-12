@@ -1,0 +1,6 @@
+services:
+  twitch-bot:
+    build: .
+    environment:
+      - BOT_TOKEN=<Twitch Bot OAuth Token>
+      - API_URL=<Streampets Backend URL>
