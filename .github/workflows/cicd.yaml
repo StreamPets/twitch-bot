@@ -31,7 +31,6 @@ jobs:
           ljheal/streampets-bot:latest
           ljheal/streampets-bot:${{ github.sha }}
 
-
   deploy:
     needs: build_and_push
     runs-on: ubuntu-latest
