@@ -18,6 +18,7 @@ spec:
       containers:
       - name: streampets-bot-container
         image: ljheal/streampets-bot:latest
+        imagePullPolicy: always
         envFrom:
         - secretRef:
             name: twitch-env
