@@ -22,3 +22,7 @@ class PetCommands(commands.Cog):
     channel_name = ctx.channel.name
     user_id = ctx.author.id
     self.bot.api.announce_color(channel_name, user_id, color)
+
+  @commands.command(name='discord')
+  async def command_discord(self, ctx: commands.Context):
+    await ctx.send("https://discord.gg/S2MDMqk")
