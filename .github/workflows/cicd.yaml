@@ -52,4 +52,7 @@ jobs:
     - name: Deploy to Kubernetes
       run: |
         kubectl apply -f .k8s/deployment.yaml
-        kubectl set image deployment/streampets-bot streampets-bot-container=ljheal/streampets-bot:${{ github.sha }}
+
+    - name: Restart Deployment
+      run: |
+        kubectl rollout restart deployment/streampets-bot -n streampets
