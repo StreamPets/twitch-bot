@@ -24,9 +24,12 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
 
     - name: Push Docker image to Docker Hub
-      run: |
-        docker push ljheal/streampets-bot:latest
-        docker push ljheal/streampets-bot:${{ github.sha }}
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: |
+          ljheal/streampets-bot:latest
+          ljheal/streampets-bot:${{ github.sha }}
 
   deploy:
     needs: build_and_push
