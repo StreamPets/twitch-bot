@@ -29,4 +29,4 @@ class PetCommands(commands.Cog):
 
   @commands.command(name='ping')
   async def command_discord(self, ctx: commands.Context):
-    await ctx.send("pong")
+    await ctx.send("pong2")
