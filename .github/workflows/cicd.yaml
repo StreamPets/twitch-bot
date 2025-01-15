@@ -25,7 +25,7 @@ jobs:
 
     - name: Push Docker image to Docker Hub
       run: |
-        docker push ljheal/streampets-backend:latest
+        docker push ljheal/streampets-bot:latest
 
   deploy:
     needs: build_and_push
