@@ -14,6 +14,8 @@ spec:
       labels:
         app: streampets-bot
         project: streampets
+    annotations:
+      redeploy: "force-$(date +%s)"
     spec:
       containers:
       - name: streampets-bot-container
