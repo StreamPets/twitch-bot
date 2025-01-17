@@ -7,7 +7,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 API_URL = os.getenv('API_URL')
 
-LRU_LIMIT = 25
+LRU_LIMIT = int(os.getenv('LRU_LIMIT', 10))
 
-BOT_NAMES = ['rexxauto', 'streamelements']
-BOT_PREFIX = '!'
+BOT_NAMES = os.getenv('BOT_NAMES').split(',')
+BOT_PREFIX = os.getenv('BOT_PREFIX')
