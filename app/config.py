@@ -8,6 +8,9 @@ load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 API_URL = os.getenv('API_URL')
 
+CLIENT_ID = os.getenv('CLIENT_ID')
+CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+
 LRU_LIMIT = int(os.getenv('LRU_LIMIT', 10))
 
 BOT_NAMES = os.getenv('BOT_NAMES').split(',')
