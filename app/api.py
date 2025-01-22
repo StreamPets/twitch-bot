@@ -1,6 +1,6 @@
 import requests
 
-from config import API_URL
+from app.config import API_URL
 
 
 def announce_join(channel_name: str, user_id: str, username: str) -> None:
