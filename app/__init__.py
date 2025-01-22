@@ -6,7 +6,6 @@ from .bot import ChatBot
 
 from app.config import (
   BOT_TOKEN,
-  BOT_PREFIX,
   WEBHOOK_SECRET,
 )
 
@@ -17,26 +16,22 @@ channel_id = 83125762
 bots: dict[str, ChatBot] = {}
 lock = asyncio.Lock()
 
-class Orchastrator(commands.Bot):
-  
-  def __init__(self, token, prefix):
-    super().__init__(token=token, prefix=prefix)
-
-  async def __ainit__(self):
-    try:
-      await esclient.subscribe_channel_stream_start(channel_id)
-      await esclient.subscribe_channel_stream_end(channel_id)
-    except twitchio.HTTPException:
-      pass
-
-orchastrator = Orchastrator(BOT_TOKEN, BOT_PREFIX)
-orchastrator.loop.run_until_complete(orchastrator.__ainit__())
+orchastrator = commands.Bot(BOT_TOKEN)
 
 esclient = eventsub.EventSubClient(
   orchastrator,
   webhook_secret=WEBHOOK_SECRET,
   callback_route='bot.streampets.io',
 )
+
+async def __ainit__():
+  try:
+    await esclient.subscribe_channel_stream_start(channel_id)
+    await esclient.subscribe_channel_stream_end(channel_id)
+  except twitchio.HTTPException:
+    pass
+
+orchastrator.loop.run_until_complete(__ainit__())
 
 @orchastrator.event()
 async def subscribe_channel_stream_start(payload: eventsub.StreamOnlineData):
