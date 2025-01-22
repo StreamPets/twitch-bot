@@ -1,39 +1,38 @@
 import time
 from typing import Optional
 
+import asyncio
 
-class NotInLruException(KeyError):
-  pass
 
-class UserLru:
+class LruCache:
 
   def __init__(self, limit) -> None:
     self.timestamps: dict[str,float] = {}
     self.limit = limit
+    self.lock = asyncio.Lock()
 
-  def add(self, user_id: str) -> Optional[str]:
+  async def keys(self):
+    async with self.lock:
+      return list(self.timestamps.keys())
+
+  async def add_or_update(self, user_id: str) -> Optional[str]:
     '''Returns the id of the removed user, or None if no user was removed.'''
-    timestamp = time.time()
-    self.timestamps[user_id] = timestamp
+    async with self.lock:
 
-    if len(self.timestamps) <= self.limit:
-      return None
-    
-    min_id, min_ts = user_id, timestamp
-    for id, ts in self.timestamps.items():
-      if ts < min_ts:
-        min_id, min_ts = id, ts
+      timestamp = time.time()
+      self.timestamps[user_id] = timestamp
 
-    del self.timestamps[min_id]
-    return min_id
+      if len(self.timestamps) <= self.limit:
+        return None
+      
+      min_id, min_ts = user_id, timestamp
+      for id, ts in self.timestamps.items():
+        if ts < min_ts:
+          min_id, min_ts = id, ts
 
-  def update_user(self, user_id: str) -> float:
-    '''Updates the user's timestamp to the current time.
-    Raises an exception if user_id not already present.'''
-    if user_id not in self.timestamps:
-      raise NotInLruException(f"The user id {user_id} was not present")
-    self.timestamps[user_id] = time.time()
-    return self.timestamps[user_id]
+      del self.timestamps[min_id]
+      return min_id
 
-  def __contains__(self, user_id: str) -> bool:
-    return user_id in self.timestamps
+  async def contains(self, user_id: str) -> bool:
+    async with self.lock:
+      return user_id in self.timestamps

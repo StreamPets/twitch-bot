@@ -1,4 +1,4 @@
-from app import chat_bot
+from app import orchastrator
 
 if __name__ == '__main__':
-  chat_bot.run()
+  orchastrator.loop.run_forever()
