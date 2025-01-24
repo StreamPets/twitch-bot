@@ -41,6 +41,7 @@ class StreamBot(commands.Bot):
         await self.load_module("app.components.pet_cmds")
         await self.load_module("app.components.social_cmds")
 
+        LOGGER.info("INTIAL_RUN = %s", INITIAL_RUN)
         if not INITIAL_RUN:
             await self.add_channel(channel_id)
 
