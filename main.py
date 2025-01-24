@@ -16,7 +16,7 @@ from app.config import (
 
 LOGGER: logging.Logger = logging.getLogger("Bot")
 
-channel_id = '83125762'
+channel_id = '429166219'
 
 
 def main() -> None:
