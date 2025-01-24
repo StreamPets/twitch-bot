@@ -34,7 +34,6 @@ def main() -> None:
       client_secret=CLIENT_SECRET,
       owner_id=OWNER_ID,
       token_database=tdb,
-      case_insensitive=True,
     ) as bot:
       await bot.setup_database()
       if not INITIAL_RUN:
