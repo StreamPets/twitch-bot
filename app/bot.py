@@ -6,6 +6,7 @@ import twitchio
 from twitchio.ext import commands
 from twitchio import eventsub, web
 
+from app.config import INITIAL_RUN
 
 LOGGER: logging.Logger = logging.getLogger("Bot")
 
@@ -40,7 +41,8 @@ class StreamBot(commands.Bot):
         await self.load_module("app.components.pet_cmds")
         await self.load_module("app.components.social_cmds")
 
-        await self.add_channel(channel_id)
+        if not INITIAL_RUN:
+            await self.add_channel(channel_id)
 
     async def add_token(
         self, token: str, refresh: str
