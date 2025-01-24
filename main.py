@@ -3,15 +3,19 @@ import logging
 
 import asqlite
 import twitchio
+from twitchio.web import AiohttpAdapter
 
 from app.bot import StreamBot
-
 from app.config import (
   BOT_ID,
   CLIENT_ID,
   CLIENT_SECRET,
-  OWNER_ID,
   INITIAL_RUN,
+  OWNER_ID,
+)
+
+adapter: AiohttpAdapter = AiohttpAdapter(
+    host="0.0.0.0"
 )
 
 
@@ -30,6 +34,8 @@ def main() -> None:
       client_secret=CLIENT_SECRET,
       owner_id=OWNER_ID,
       token_database=tdb,
+      adapter=adapter,
+      case_insensitive=True,
     ) as bot:
       await bot.setup_database()
       if not INITIAL_RUN:
