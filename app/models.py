@@ -1,7 +1,5 @@
-import time
-from typing import Optional
-
 import asyncio
+import time
 
 
 class LruCache:
@@ -15,7 +13,7 @@ class LruCache:
     async with self.lock:
       return list(self.timestamps.keys())
 
-  async def add_or_update(self, user_id: str) -> Optional[str]:
+  async def add_or_update(self, user_id: str) -> str | None:
     '''Returns the id of the removed user, or None if no user was removed.'''
     async with self.lock:
 

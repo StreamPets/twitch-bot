@@ -1,72 +1,79 @@
-import aiorwlock
-from twitchio.ext import commands, eventsub
+import logging
+import sqlite3
 
-from app import api
-from app.models import LruCache
-
-from app.config import (
-  BOT_NAMES,
-  LRU_LIMIT,
-)
+import asqlite
+import twitchio
+from twitchio.ext import commands
+from twitchio import eventsub
 
 
-class ChatBot(commands.Bot):
+LOGGER: logging.Logger = logging.getLogger("Bot")
 
-  def __init__(self, token, prefix, channel_id, channel_name, esclient: eventsub.EventSubClient):
+class StreamBot(commands.Bot):
+  def __init__(
+    self,
+    *,
+    bot_id: str,
+    client_id: str,
+    client_secret: str,
+    owner_id: str,
+    token_database: asqlite.Pool
+  ) -> None:
     super().__init__(
-      token=token,
-      prefix=prefix,
-      initial_channels=[channel_name],
+      client_id=client_id,
+      client_secret=client_secret,
+      bot_id=bot_id,
+      owner_id=owner_id,
+      prefix='!',
     )
 
-    self.esclient = esclient
-    self.cache = LruCache(LRU_LIMIT)
-    self.channel_id = channel_id
-    self.channel_name = channel_name
-    self.closing = False
-    self.lock = aiorwlock.RWLock()
+    self.token_database = token_database
 
-    self.load_module("app.commands")
+  async def setup_hook(self) -> None:
+    await self.load_module("app.components.pet_cmds")
+    await self.load_module("app.components.social_cmds")
 
-  async def del_async(self):
-    async with self.lock.writer_lock:
-      self.closing = True
-      for user_id in await self.cache.keys():
-        api.announce_part(self.channel_name, user_id)
+  async def add_token(self, token: str, refresh: str) -> twitchio.authentication.ValidateTokenPayload:
+    # Make sure to call super() as it will add the tokens interally and return us some data...
+    resp: twitchio.authentication.ValidateTokenPayload = await super().add_token(token, refresh)
 
-  async def event_message(self, message):
-    async with self.lock.reader_lock:
-      if self.closing:
-        return
+    # Store our tokens in a simple SQLite Database when they are authorized...
+    query = """
+    INSERT INTO tokens (user_id, token, refresh)
+    VALUES (?, ?, ?)
+    ON CONFLICT(user_id)
+    DO UPDATE SET
+        token = excluded.token,
+        refresh = excluded.refresh;
+    """
 
-      if not message.author or message.author.name in BOT_NAMES:
-        return
+    async with self.token_database.acquire() as connection:
+      await connection.execute(query, (resp.user_id, token, refresh))
 
-      channel_name = message.channel.name
-      user_id = message.author.id
-      username = message.author.name
+    LOGGER.info("Added token to the database for user: %s", resp.user_id)
+    return resp
 
-      if not await self.cache.contains(user_id):
-        api.announce_join(channel_name, user_id, username)
+  async def load_tokens(self, path: str | None = None) -> None:
+      # We don't need to call this manually, it is called in .login() from .start() internally...
 
-      removed_id = await self.cache.add_or_update(user_id)
-      if removed_id:
-        api.announce_part(channel_name, removed_id)
+      async with self.token_database.acquire() as connection:
+          rows: list[sqlite3.Row] = await connection.fetchall("""SELECT * from tokens""")
 
-      await self.handle_commands(message)
+      for row in rows:
+          await self.add_token(row["token"], row["refresh"])
 
-  @commands.command(name='jump')
-  async def command_jump(self, ctx: commands.Context):
-    channel_name = ctx.channel.name
-    user_id = ctx.author.id
-    api.announce_jump(channel_name, user_id)
+  async def setup_database(self) -> None:
+      # Create our token table, if it doesn't exist..
+      query = """CREATE TABLE IF NOT EXISTS tokens(user_id TEXT PRIMARY KEY, token TEXT NOT NULL, refresh TEXT NOT NULL)"""
+      async with self.token_database.acquire() as connection:
+          await connection.execute(query)
 
-  @commands.command(name='color', aliases=['colour'])
-  async def command_color(self, ctx: commands.Context, color: str):
-    channel_name = ctx.channel.name
-    user_id = ctx.author.id
-    api.announce_color(channel_name, user_id, color)
+  async def event_ready(self) -> None:
+      LOGGER.info("Successfully logged in as: %s", self.bot_id)
 
-  @commands.command(name='discord')
-  async def command_discord(self, ctx: commands.Context):
-    await ctx.send("https://discord.gg/S2MDMqk")
+  async def add_channel(self, channel_id) -> None:
+    subscription = eventsub.StreamOnlineSubscription(broadcaster_user_id=channel_id)
+    await self.subscribe_websocket(payload=subscription)
+
+    subscription = eventsub.StreamOfflineSubscription(broadcaster_user_id=channel_id)
+    await self.subscribe_websocket(payload=subscription)
