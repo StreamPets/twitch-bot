@@ -11,6 +11,7 @@ from app.config import (
   CLIENT_ID,
   CLIENT_SECRET,
   OWNER_ID,
+  INITIAL_RUN,
 )
 
 
@@ -31,7 +32,8 @@ def main() -> None:
       token_database=tdb,
     ) as bot:
       await bot.setup_database()
-      await bot.add_channel(channel_id)
+      if not INITIAL_RUN:
+        await bot.add_channel(channel_id)
       await bot.start()
 
   try:
