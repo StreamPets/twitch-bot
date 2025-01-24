@@ -31,7 +31,7 @@ LOGGER: logging.Logger = logging.getLogger("Bot")
 
 
 def main() -> None:
-    twitchio.utils.setup_logging(level=logging.DEBUG)
+    twitchio.utils.setup_logging(level=logging.INFO)
 
     async def runner() -> None:
         async with (
