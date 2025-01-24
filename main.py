@@ -31,8 +31,8 @@ def main() -> None:
       token_database=tdb,
     ) as bot:
       await bot.setup_database()
-      await bot.start()
       await bot.add_channel(channel_id)
+      await bot.start()
 
   try:
     asyncio.run(runner())
