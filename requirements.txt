@@ -4,6 +4,7 @@ aiorwlock==1.5.0
 aiosignal==1.3.2
 anyio==4.8.0
 asqlite @ git+https://github.com/Rapptz/asqlite.git@8d929c7628e53d01b6905866f8b6d350e76a8d40
+asyncpg==0.30.0
 attrs==24.3.0
 certifi==2024.12.14
 charset-normalizer==3.4.1
