@@ -4,7 +4,7 @@ import sqlite3
 import asqlite
 import twitchio
 from twitchio.ext import commands
-from twitchio import eventsub
+from twitchio import eventsub, web
 
 
 LOGGER: logging.Logger = logging.getLogger("Bot")
@@ -17,7 +17,8 @@ class StreamBot(commands.Bot):
     client_id: str,
     client_secret: str,
     owner_id: str,
-    token_database: asqlite.Pool
+    token_database: asqlite.Pool,
+    adapter: web.AiohttpAdapter,
   ) -> None:
     super().__init__(
       client_id=client_id,
@@ -25,6 +26,7 @@ class StreamBot(commands.Bot):
       bot_id=bot_id,
       owner_id=owner_id,
       prefix='!',
+      adapter=adapter,
     )
 
     self.token_database = token_database
