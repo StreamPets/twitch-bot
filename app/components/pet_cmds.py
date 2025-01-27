@@ -87,7 +87,7 @@ class PetComponent(commands.Component):
     @commands.Component.listener()
     async def event_stream_offline(self, payload: twitchio.StreamOffline) -> None:
         channel_id = payload.broadcaster.id
-        channel_name = payload.broadcaster.id
+        channel_name = payload.broadcaster.name
         LOGGER.info("leaving channel %s...", channel_id)
 
         if channel_id not in self.sub_maps:
