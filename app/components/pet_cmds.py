@@ -96,7 +96,7 @@ class PetComponent(commands.Component):
             )
             return
 
-        await self.delete_eventsub_subscription(
+        await self.bot.delete_eventsub_subscription(
             self.sub_maps[channel_id],
             token_for=self.bot.bot_id,
         )
