@@ -1,4 +1,8 @@
+import logging
+
 import aiohttp
+
+LOGGER: logging.Logger = logging.getLogger(__name__)
 
 
 async def announce_join(
@@ -15,7 +19,8 @@ async def announce_join(
             "username": username,
         },
     ) as response:
-        await response.json()
+        if response.status != 204:
+            LOGGER.error("received status code %d from announce join", response.status)
 
 
 async def announce_part(
@@ -25,7 +30,8 @@ async def announce_part(
 ) -> None:
     url = f"/channels/{channel_name}/users/{user_id}"
     async with session.delete(url) as response:
-        await response.json()
+        if response.status != 204:
+            LOGGER.error("received status code %d from announce part", response.status)
 
 
 async def announce_color(
@@ -39,7 +45,8 @@ async def announce_color(
         url,
         json={"item_name": color},
     ) as response:
-        await response.json()
+        if response.status != 204:
+            LOGGER.error("received status code %d from announce color", response.status)
 
 
 async def announce_jump(
@@ -49,4 +56,5 @@ async def announce_jump(
 ) -> None:
     url = f"/channels/{channel_name}/users/{user_id}/JUMP"
     async with session.post(url) as response:
-        await response.json()
+        if response.status != 204:
+            LOGGER.error("received status code %d from announce jump", response.status)
