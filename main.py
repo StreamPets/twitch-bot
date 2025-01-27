@@ -8,6 +8,7 @@ from twitchio.web import AiohttpAdapter
 
 from app.bot import StreamBot
 from app.config import (
+    API_URL,
     BOT_ID,
     CLIENT_ID,
     CLIENT_SECRET,
@@ -18,8 +19,9 @@ from app.config import (
     PS_PORT,
     HOST,
     DOMAIN,
-    API_URL,
 )
+
+LOGGER: logging.Logger = logging.getLogger("Bot")
 
 adapter: AiohttpAdapter = AiohttpAdapter(
     host=HOST,
@@ -27,11 +29,8 @@ adapter: AiohttpAdapter = AiohttpAdapter(
 )
 
 
-LOGGER: logging.Logger = logging.getLogger("Bot")
-
-
 def main() -> None:
-    twitchio.utils.setup_logging(level=logging.DEBUG)
+    twitchio.utils.setup_logging(level=logging.INFO)
 
     async def runner() -> None:
         async with (

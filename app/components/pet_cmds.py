@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 import twitchio
@@ -7,19 +8,21 @@ from twitchio import eventsub
 from twitchio.ext import commands
 
 from app import api
+from app.models import ViewerCache
 from app.config import (
     LRU_LIMIT,
 )
-from app.models import LruCache
 
 if TYPE_CHECKING:
     from app.bot import StreamBot
+
+LOGGER: logging.Logger = logging.getLogger("Bot")
 
 
 class PetComponent(commands.Component):
     def __init__(self, bot: commands.Bot):
         self.bot: StreamBot = bot
-        self.cache: dict[str, LruCache] = {}
+        self.cache: dict[str, ViewerCache] = {}
         self.sub_maps: dict[str, str] = {}
 
     @commands.Component.listener()
@@ -68,7 +71,7 @@ class PetComponent(commands.Component):
     @commands.Component.listener()
     async def event_stream_online(self, payload: twitchio.StreamOnline) -> None:
         channel_id = payload.broadcaster.id
-        self.cache[channel_id] = LruCache(LRU_LIMIT)
+        self.cache[channel_id] = ViewerCache(LRU_LIMIT)
 
         subscription = eventsub.ChatMessageSubscription(
             broadcaster_user_id=channel_id,
@@ -81,18 +84,19 @@ class PetComponent(commands.Component):
     @commands.Component.listener()
     async def event_stream_offline(self, payload: twitchio.StreamOffline) -> None:
         channel_id = payload.broadcaster.id
+        channel_name = payload.broadcaster.id
         if channel_id not in self.sub_maps:
             return
 
-        await self.bot.delete_eventsub_subscription(
+        await self.delete_eventsub_subscription(
             self.sub_maps[channel_id],
             token_for=self.bot.bot_id,
         )
 
-        for user_id in await self.cache[channel_id].keys():
+        for user_id in await self.cache[channel_id].user_ids():
             await api.announce_part(
                 self.bot.aio_session,
-                payload.broadcaster.name,
+                channel_name,
                 user_id,
             )
 
