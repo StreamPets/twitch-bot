@@ -91,9 +91,7 @@ class PetComponent(commands.Component):
         LOGGER.info("leaving channel %s...", channel_id)
 
         if channel_id not in self.sub_maps:
-            LOGGER.error(
-                "failed to leave channel %s: bot is not in channel", channel_id
-            )
+            LOGGER.error("failed to leave channel %s: bot not in channel", channel_id)
             return
 
         await self.bot.delete_eventsub_subscription(
