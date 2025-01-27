@@ -71,6 +71,8 @@ class PetComponent(commands.Component):
     @commands.Component.listener()
     async def event_stream_online(self, payload: twitchio.StreamOnline) -> None:
         channel_id = payload.broadcaster.id
+        LOGGER.info("joining channel %s...", channel_id)
+
         self.cache[channel_id] = ViewerCache(LRU_LIMIT)
 
         subscription = eventsub.ChatMessageSubscription(
@@ -80,12 +82,18 @@ class PetComponent(commands.Component):
         sub = await self.bot.subscribe_websocket(payload=subscription, as_bot=True)
 
         self.sub_maps[channel_id] = sub["data"][0]["id"]
+        LOGGER.info("joined channel %s", channel_id)
 
     @commands.Component.listener()
     async def event_stream_offline(self, payload: twitchio.StreamOffline) -> None:
         channel_id = payload.broadcaster.id
         channel_name = payload.broadcaster.id
+        LOGGER.info("leaving channel %s...", channel_id)
+
         if channel_id not in self.sub_maps:
+            LOGGER.error(
+                "failed to leave channel %s: bot is not in channel", channel_id
+            )
             return
 
         await self.delete_eventsub_subscription(
@@ -101,6 +109,7 @@ class PetComponent(commands.Component):
             )
 
         self.cache.pop(channel_id)
+        LOGGER.info("leaving channel %s successful", channel_id)
 
 
 async def setup(bot: commands.Bot):
