@@ -4,14 +4,9 @@ import logging
 from typing import TYPE_CHECKING
 
 import twitchio
-from twitchio import eventsub
 from twitchio.ext import commands
 
 from app import api
-from app.models import ViewerCache
-from app.config import (
-    LRU_LIMIT,
-)
 
 if TYPE_CHECKING:
     from app.bot import StreamBot
@@ -22,8 +17,6 @@ LOGGER: logging.Logger = logging.getLogger("Bot")
 class PetComponent(commands.Component):
     def __init__(self, bot: commands.Bot):
         self.bot: StreamBot = bot
-        self.cache: dict[str, ViewerCache] = {}
-        self.sub_maps: dict[str, str] = {}
 
     @commands.Component.listener()
     async def event_message(self, payload: twitchio.ChatMessage):
@@ -32,7 +25,7 @@ class PetComponent(commands.Component):
         user_id = payload.chatter.id
         username = payload.chatter.name
 
-        if not await self.cache[channel_id].contains(user_id):
+        if not await self.bot.cache[channel_id].contains(user_id):
             await api.announce_join(
                 self.bot.aio_session,
                 channel_name,
@@ -40,7 +33,7 @@ class PetComponent(commands.Component):
                 username,
             )
 
-        removed_id = await self.cache[channel_id].add_or_update(user_id)
+        removed_id = await self.bot.cache[channel_id].add_or_update(user_id)
         if removed_id:
             await api.announce_part(
                 self.bot.aio_session,
@@ -70,44 +63,16 @@ class PetComponent(commands.Component):
 
     @commands.Component.listener()
     async def event_stream_online(self, payload: twitchio.StreamOnline) -> None:
-        channel_id = payload.broadcaster.id
-        LOGGER.info("joining channel %s...", channel_id)
-
-        self.cache[channel_id] = ViewerCache(LRU_LIMIT)
-
-        subscription = eventsub.ChatMessageSubscription(
-            broadcaster_user_id=channel_id,
-            user_id=self.bot.bot_id,
+        await self.bot.join_channel(
+            channel_id=payload.broadcaster.id,
         )
-        sub = await self.bot.subscribe_websocket(payload=subscription, as_bot=True)
-
-        self.sub_maps[channel_id] = sub["data"][0]["id"]
-        LOGGER.info("joined channel %s", channel_id)
 
     @commands.Component.listener()
     async def event_stream_offline(self, payload: twitchio.StreamOffline) -> None:
-        channel_id = payload.broadcaster.id
-        channel_name = payload.broadcaster.name
-        LOGGER.info("leaving channel %s...", channel_id)
-
-        if channel_id not in self.sub_maps:
-            LOGGER.error("failed to leave channel %s: bot not in channel", channel_id)
-            return
-
-        await self.bot.delete_eventsub_subscription(
-            self.sub_maps[channel_id],
-            token_for=self.bot.bot_id,
+        await self.bot.leave_channel(
+            channel_id=payload.broadcaster.id,
+            channel_name=payload.broadcaster.name,
         )
-
-        for user_id in await self.cache[channel_id].user_ids():
-            await api.announce_part(
-                self.bot.aio_session,
-                channel_name,
-                user_id,
-            )
-
-        self.cache.pop(channel_id)
-        LOGGER.info("leaving channel %s successful", channel_id)
 
 
 async def setup(bot: commands.Bot):

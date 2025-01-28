@@ -7,8 +7,11 @@ import twitchio
 from twitchio.ext import commands
 from twitchio import eventsub, web
 
+from app import api
+from app.models import ViewerCache
 from app.config import (
     INITIAL_RUN,
+    LRU_LIMIT,
     WEBHOOK_SECRET,
 )
 
@@ -38,6 +41,9 @@ class StreamBot(commands.Bot):
 
         self.aio_session = aio_session
         self.token_database = token_database
+
+        self.cache: dict[str, ViewerCache] = {}
+        self.sub_maps: dict[str, str] = {}
 
     async def setup_hook(self) -> None:
         await self.load_module("app.components.pet_cmds")
@@ -69,6 +75,10 @@ class StreamBot(commands.Bot):
                 await self.subscribe_online_events(channel_id)
             if not webhooks[channel_id]["offline"]:
                 await self.subscribe_offline_events(channel_id)
+            async for stream in self.fetch_streams(user_ids=[channel_id]):
+                if stream.type == "live":
+                    self.join_channel(channel_id)
+                    break
 
     async def add_token(
         self, token: str, refresh: str
@@ -126,3 +136,39 @@ class StreamBot(commands.Bot):
             eventsub_secret=WEBHOOK_SECRET,
         )
         LOGGER.info("listening to offline events for %s", channel_id)
+
+    async def join_channel(self, channel_id: str) -> None:
+        LOGGER.info("joining channel %s...", channel_id)
+
+        self.cache[channel_id] = ViewerCache(LRU_LIMIT)
+
+        subscription = eventsub.ChatMessageSubscription(
+            broadcaster_user_id=channel_id,
+            user_id=self.bot_id,
+        )
+        sub = await self.subscribe_websocket(payload=subscription, as_bot=True)
+
+        self.sub_maps[channel_id] = sub["data"][0]["id"]
+        LOGGER.info("joined channel %s", channel_id)
+
+    async def leave_channel(self, channel_id: str, channel_name: str) -> None:
+        LOGGER.info("leaving channel %s...", channel_id)
+
+        if channel_id not in self.sub_maps:
+            LOGGER.error("failed to leave channel %s: bot not in channel", channel_id)
+            return
+
+        await self.delete_eventsub_subscription(
+            self.sub_maps[channel_id],
+            token_for=self.bot_id,
+        )
+
+        for user_id in await self.cache[channel_id].user_ids():
+            await api.announce_part(
+                self.aio_session,
+                channel_name,
+                user_id,
+            )
+
+        self.cache.pop(channel_id)
+        LOGGER.info("leaving channel %s successful", channel_id)
