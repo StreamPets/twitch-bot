@@ -21,6 +21,7 @@ PS_USER = os.getenv("PS_USER")
 PS_PASS = os.getenv("PS_PASS")
 PS_HOST = os.getenv("PS_HOST")
 PS_PORT = os.getenv("PS_PORT")
+PS_NAME = os.getenv("PS_NAME")
 
 HOST = os.getenv("HOST")
 DOMAIN = os.getenv("DOMAIN")

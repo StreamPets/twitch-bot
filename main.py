@@ -17,6 +17,7 @@ from app.config import (
     PS_PASS,
     PS_HOST,
     PS_PORT,
+    PS_NAME,
     HOST,
     DOMAIN,
     WEBHOOK_SECRET,
@@ -37,7 +38,7 @@ def main() -> None:
     async def runner() -> None:
         async with (
             asyncpg.create_pool(
-                dsn=f"postgres://{PS_USER}:{PS_PASS}@{PS_HOST}:{PS_PORT}/streampets"
+                dsn=f"postgres://{PS_USER}:{PS_PASS}@{PS_HOST}:{PS_PORT}/{PS_NAME}"
             ) as tdb,
             aiohttp.ClientSession(API_URL) as aio_session,
             StreamBot(
