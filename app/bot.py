@@ -1,4 +1,5 @@
 import logging
+import collections
 
 import aiohttp
 import asyncpg
@@ -7,8 +8,8 @@ from twitchio.ext import commands
 from twitchio import eventsub, web
 
 from app.config import (
-    CHANNEL_ID,
     INITIAL_RUN,
+    WEBHOOK_SECRET,
 )
 
 LOGGER: logging.Logger = logging.getLogger("Bot")
@@ -43,8 +44,31 @@ class StreamBot(commands.Bot):
         await self.load_module("app.components.social_cmds")
 
         LOGGER.info("INTIAL_RUN = %s", INITIAL_RUN)
-        if not INITIAL_RUN:
-            await self.add_channel(CHANNEL_ID)
+        if INITIAL_RUN:
+            return
+
+        webhooks = collections.defaultdict(lambda: {"online": False, "offline": False})
+
+        subscriptions = await self.fetch_eventsub_subscriptions()
+        async for sub in subscriptions.subscriptions:
+            user_id = sub.condition["broadcaster_user_id"]
+
+            if "stream.online" in sub.type:
+                webhooks[user_id]["online"] = True
+            elif "stream.offline" in sub.type:
+                webhooks[user_id]["offline"] = True
+
+        async with self.token_database.acquire() as connection:
+            rows: list[asyncpg.Record] = await connection.fetch(
+                """SELECT * FROM channels"""
+            )
+
+        for row in rows:
+            channel_id = row["channel_id"]
+            if not webhooks[channel_id]["online"]:
+                await self.subscribe_online_events(channel_id)
+            if not webhooks[channel_id]["offline"]:
+                await self.subscribe_offline_events(channel_id)
 
     async def add_token(
         self, token: str, refresh: str
@@ -85,11 +109,20 @@ class StreamBot(commands.Bot):
     async def event_ready(self) -> None:
         LOGGER.info("Successfully logged in as: %s", self.bot_id)
 
-    async def add_channel(self, channel_id: str) -> None:
+    async def subscribe_online_events(self, channel_id: str) -> None:
         sub = eventsub.StreamOnlineSubscription(broadcaster_user_id=channel_id)
-        await self.subscribe_websocket(payload=sub)
+        await self.subscribe_webhook(
+            payload=sub,
+            token_for=None,
+            eventsub_secret=WEBHOOK_SECRET,
+        )
         LOGGER.info("listening to online events for %s", channel_id)
 
+    async def subscribe_offline_events(self, channel_id: str) -> None:
         sub = eventsub.StreamOfflineSubscription(broadcaster_user_id=channel_id)
-        await self.subscribe_websocket(payload=sub)
+        await self.subscribe_webhook(
+            payload=sub,
+            token_for=None,
+            eventsub_secret=WEBHOOK_SECRET,
+        )
         LOGGER.info("listening to offline events for %s", channel_id)

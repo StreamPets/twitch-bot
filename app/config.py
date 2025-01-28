@@ -24,3 +24,5 @@ PS_PORT = os.getenv("PS_PORT")
 
 HOST = os.getenv("HOST")
 DOMAIN = os.getenv("DOMAIN")
+
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")

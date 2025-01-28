@@ -19,6 +19,7 @@ from app.config import (
     PS_PORT,
     HOST,
     DOMAIN,
+    WEBHOOK_SECRET,
 )
 
 LOGGER: logging.Logger = logging.getLogger("Bot")
@@ -26,6 +27,7 @@ LOGGER: logging.Logger = logging.getLogger("Bot")
 adapter: AiohttpAdapter = AiohttpAdapter(
     host=HOST,
     domain=DOMAIN,
+    eventsub_secret=WEBHOOK_SECRET,
 )
 
 
@@ -35,7 +37,7 @@ def main() -> None:
     async def runner() -> None:
         async with (
             asyncpg.create_pool(
-                dsn=f"postgres://{PS_USER}:{PS_PASS}@{PS_HOST}:{PS_PORT}"
+                dsn=f"postgres://{PS_USER}:{PS_PASS}@{PS_HOST}:{PS_PORT}/streampets"
             ) as tdb,
             aiohttp.ClientSession(API_URL) as aio_session,
             StreamBot(
