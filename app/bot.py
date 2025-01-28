@@ -77,7 +77,7 @@ class StreamBot(commands.Bot):
                 await self.subscribe_offline_events(channel_id)
             async for stream in self.fetch_streams(user_ids=[channel_id]):
                 if stream.type == "live":
-                    self.join_channel(channel_id)
+                    await self.join_channel(channel_id)
                     break
 
     async def add_token(
