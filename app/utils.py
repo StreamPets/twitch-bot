@@ -14,10 +14,11 @@ class MyAiohttpAdapter(AiohttpAdapter):
         *,
         host=None,
         port=None,
-        domain=None,  # bot.streampets.io
+        domain=None,
         eventsub_path=None,
         eventsub_secret=None,
-        oauth_redirect_url=None,  # dashboard.streampets.io # *.streampets.io
+        oauth_redirect_url=None,
+        cookie_domain=None,
     ):
         super().__init__(
             host=host,
@@ -28,6 +29,7 @@ class MyAiohttpAdapter(AiohttpAdapter):
         )
 
         self.__oauth_redirect_url = oauth_redirect_url
+        self.__cookie_domain = cookie_domain
 
     async def fetch_token(self, request):
         if "code" not in request.query:
@@ -47,12 +49,17 @@ class MyAiohttpAdapter(AiohttpAdapter):
             return web.Response(status=500)
 
         self.client.dispatch(event="oauth_authorized", payload=payload)
-        return web.HTTPPermanentRedirect(
+        response = web.HTTPPermanentRedirect(
             location=self.__oauth_redirect_url,
-            headers={
-                "Set-Cookie": f"Authorization={payload.access_token}; Secure; HttpOnly; Domain={self.__oauth_redirect_url}",
-            },
         )
+        response.set_cookie(
+            "different-cookie-name",
+            payload.access_token,
+            domain=self.__cookie_domain,
+            httponly=True,
+            secure=True,
+        )
+        return response
 
 
 class ViewerCache:
