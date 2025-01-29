@@ -53,7 +53,7 @@ class MyAiohttpAdapter(AiohttpAdapter):
             location=self.__oauth_redirect_url,
         )
         response.set_cookie(
-            "different-cookie-name",
+            "Authorization",
             payload.access_token,
             domain=self.__cookie_domain,
             httponly=True,
