@@ -1,5 +1,4 @@
 import logging
-import collections
 
 import aiohttp
 import asyncpg
@@ -52,16 +51,9 @@ class StreamBot(commands.Bot):
         if INITIAL_RUN:
             return
 
-        webhooks = collections.defaultdict(lambda: {"online": False, "offline": False})
-
         subscriptions = await self.fetch_eventsub_subscriptions()
         async for sub in subscriptions.subscriptions:
-            user_id = sub.condition["broadcaster_user_id"]
-
-            if "stream.online" in sub.type:
-                webhooks[user_id]["online"] = True
-            elif "stream.offline" in sub.type:
-                webhooks[user_id]["offline"] = True
+            sub.delete()
 
         async with self.token_database.acquire() as connection:
             rows: list[asyncpg.Record] = await connection.fetch(
@@ -136,6 +128,9 @@ class StreamBot(commands.Bot):
             user_id=self.bot_id,
         )
         sub = await self.subscribe_websocket(payload=subscription, as_bot=True)
+
+        if not sub:
+            return
 
         self.sub_maps[channel_id] = sub["data"][0]["id"]
         LOGGER.info("joined channel %s", channel_id)
