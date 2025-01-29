@@ -53,7 +53,7 @@ class StreamBot(commands.Bot):
 
         subscriptions = await self.fetch_eventsub_subscriptions()
         async for sub in subscriptions.subscriptions:
-            sub.delete()
+            await sub.delete()
 
         async with self.token_database.acquire() as connection:
             rows: list[asyncpg.Record] = await connection.fetch(
