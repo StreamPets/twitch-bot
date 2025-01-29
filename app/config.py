@@ -27,3 +27,5 @@ HOST = os.getenv("HOST")
 DOMAIN = os.getenv("DOMAIN")
 
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
+
+OAUTH_REDIRECT_URL = os.getenv("OAUTH_REDIRECT_URL")
