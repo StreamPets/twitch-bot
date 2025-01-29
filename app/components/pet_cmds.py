@@ -20,7 +20,6 @@ class PetComponent(commands.Component):
 
     @commands.Component.listener()
     async def event_message(self, payload: twitchio.ChatMessage):
-        channel_name = payload.broadcaster.name
         channel_id = payload.broadcaster.id
         user_id = payload.chatter.id
         username = payload.chatter.name
@@ -28,7 +27,7 @@ class PetComponent(commands.Component):
         if not await self.bot.cache[channel_id].contains(user_id):
             await api.announce_join(
                 self.bot.aio_session,
-                channel_name,
+                channel_id,
                 user_id,
                 username,
             )
@@ -37,42 +36,37 @@ class PetComponent(commands.Component):
         if removed_id:
             await api.announce_part(
                 self.bot.aio_session,
-                channel_name,
+                channel_id,
                 removed_id,
             )
 
     @commands.command(name="jump")
     async def command_jump(self, ctx: commands.Context):
-        channel_name = ctx.channel.name
+        channel_id = ctx.channel.id
         user_id = ctx.author.id
         await api.announce_jump(
             self.bot.aio_session,
-            channel_name,
+            channel_id,
             user_id,
         )
 
     @commands.command(name="color", aliases=["colour"])
     async def command_color(self, ctx: commands.Context, color: str):
-        channel_name = ctx.channel.name
+        channel_id = ctx.channel.id
         user_id = ctx.author.id
         await api.announce_color(
-            channel_name,
+            channel_id,
             user_id,
             color,
         )
 
     @commands.Component.listener()
     async def event_stream_online(self, payload: twitchio.StreamOnline) -> None:
-        await self.bot.join_channel(
-            channel_id=payload.broadcaster.id,
-        )
+        await self.bot.join_channel(channel_id=payload.broadcaster.id)
 
     @commands.Component.listener()
     async def event_stream_offline(self, payload: twitchio.StreamOffline) -> None:
-        await self.bot.leave_channel(
-            channel_id=payload.broadcaster.id,
-            channel_name=payload.broadcaster.name,
-        )
+        await self.bot.leave_channel(channel_id=payload.broadcaster.id)
 
 
 async def setup(bot: commands.Bot):

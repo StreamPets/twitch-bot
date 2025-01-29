@@ -131,7 +131,7 @@ class StreamBot(commands.Bot):
         self.sub_maps[channel_id] = sub["data"][0]["id"]
         LOGGER.info("joined channel %s", channel_id)
 
-    async def leave_channel(self, channel_id: str, channel_name: str) -> None:
+    async def leave_channel(self, channel_id: str) -> None:
         LOGGER.info("leaving channel %s...", channel_id)
 
         if channel_id not in self.sub_maps:
@@ -146,7 +146,7 @@ class StreamBot(commands.Bot):
         for user_id in await self.cache[channel_id].user_ids():
             await api.announce_part(
                 self.aio_session,
-                channel_name,
+                channel_id,
                 user_id,
             )
 
