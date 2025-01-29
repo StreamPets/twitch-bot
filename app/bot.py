@@ -51,10 +51,6 @@ class StreamBot(commands.Bot):
         if INITIAL_RUN:
             return
 
-        subscriptions = await self.fetch_eventsub_subscriptions()
-        async for sub in subscriptions.subscriptions:
-            await sub.delete()
-
         async with self.token_database.acquire() as connection:
             rows: list[asyncpg.Record] = await connection.fetch(
                 """SELECT * FROM channels"""
