@@ -31,30 +31,16 @@ class MyAiohttpAdapter(AiohttpAdapter):
         self.__oauth_redirect_url = oauth_redirect_url
         self.__cookie_domain = cookie_domain
 
-    async def fetch_token(self, request):
-        if "code" not in request.query:
-            return web.Response(status=400)
+    async def oauth_callback(self, request):
+        payload = await self.fetch_token(request)
+        access_token = payload.payload.access_token
 
-        try:
-            payload = await self.client._http.user_access_token(
-                request.query["code"],
-                redirect_uri=self.redirect_url,
-            )
-        except Exception as e:
-            LOGGER.error(
-                "Exception raised while fetching Token in <%s>: %s",
-                self.__class__.__qualname__,
-                e,
-            )
-            return web.Response(status=500)
-
-        self.client.dispatch(event="oauth_authorized", payload=payload)
         response = web.HTTPPermanentRedirect(
             location=self.__oauth_redirect_url,
         )
         response.set_cookie(
             "Authorization",
-            payload.access_token,
+            access_token,
             domain=self.__cookie_domain,
             httponly=True,
             secure=True,
