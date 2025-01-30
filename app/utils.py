@@ -1,5 +1,51 @@
 import asyncio
+import logging
 import time
+
+from aiohttp import web
+from twitchio.web import AiohttpAdapter
+
+LOGGER: logging.Logger = logging.getLogger("Bot")
+
+
+class MyAiohttpAdapter(AiohttpAdapter):
+    def __init__(
+        self,
+        *,
+        host=None,
+        port=None,
+        domain=None,
+        eventsub_path=None,
+        eventsub_secret=None,
+        oauth_redirect_url=None,
+        cookie_domain=None,
+    ):
+        super().__init__(
+            host=host,
+            port=port,
+            domain=domain,
+            eventsub_path=eventsub_path,
+            eventsub_secret=eventsub_secret,
+        )
+
+        self.__oauth_redirect_url = oauth_redirect_url
+        self.__cookie_domain = cookie_domain
+
+    async def oauth_callback(self, request):
+        payload = await self.fetch_token(request)
+        access_token = payload.payload.access_token
+
+        response = web.HTTPPermanentRedirect(
+            location=self.__oauth_redirect_url,
+        )
+        response.set_cookie(
+            "Authorization",
+            access_token,
+            domain=self.__cookie_domain,
+            httponly=True,
+            secure=True,
+        )
+        return response
 
 
 class ViewerCache:

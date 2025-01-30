@@ -19,7 +19,7 @@ python-dotenv==1.0.1
 requests==2.32.3
 sniffio==1.3.1
 starlette==0.45.2
-twitchio @ git+https://github.com/PythonistaGuild/TwitchIO.git@798da66f4eb8edcc6e94c9a26744e8edb52b3126
+twitchio @ git+https://github.com/PythonistaGuild/TwitchIO.git@f0b63bd2cb85cf838b15747d68e02515b5407450
 typing_extensions==4.12.2
 urllib3==2.3.0
 uvicorn==0.34.0

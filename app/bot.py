@@ -7,7 +7,7 @@ from twitchio.ext import commands
 from twitchio import eventsub, web
 
 from app import api
-from app.models import ViewerCache
+from app.utils import ViewerCache
 from app.config import (
     INITIAL_RUN,
     LRU_LIMIT,

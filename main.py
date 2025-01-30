@@ -4,7 +4,6 @@ import logging
 import aiohttp
 import asyncpg
 import twitchio
-from twitchio.web import AiohttpAdapter
 
 from app.bot import StreamBot
 from app.config import (
@@ -12,23 +11,29 @@ from app.config import (
     BOT_ID,
     CLIENT_ID,
     CLIENT_SECRET,
-    OWNER_ID,
-    PS_USER,
-    PS_PASS,
-    PS_HOST,
-    PS_PORT,
-    PS_NAME,
-    HOST,
+    COOKIE_DOMAIN,
     DOMAIN,
+    HOST,
+    OAUTH_REDIRECT_URL,
+    OWNER_ID,
+    PS_HOST,
+    PS_NAME,
+    PS_PASS,
+    PS_PORT,
+    PS_USER,
     WEBHOOK_SECRET,
 )
+from app.utils import MyAiohttpAdapter
 
 LOGGER: logging.Logger = logging.getLogger("Bot")
 
-adapter: AiohttpAdapter = AiohttpAdapter(
+
+adapter = MyAiohttpAdapter(
     host=HOST,
     domain=DOMAIN,
     eventsub_secret=WEBHOOK_SECRET,
+    oauth_redirect_url=OAUTH_REDIRECT_URL,
+    cookie_domain=COOKIE_DOMAIN,
 )
 
 
