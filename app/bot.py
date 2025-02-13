@@ -139,18 +139,21 @@ class StreamBot(commands.Bot):
             LOGGER.error("failed to leave channel %s: bot not in channel", channel_id)
             return
 
-        for user_id in await self.cache[channel_id].user_ids():
-            await api.announce_part(
-                self.aio_session,
-                channel_id,
-                user_id,
+        try:
+            await self.delete_eventsub_subscription(
+                self.sub_maps[channel_id],
+                token_for=self.bot_id,
             )
+        except Exception as e:
+            LOGGER.error("failed to delete eventsub subscription %s", e)
+        finally:
+            for user_id in await self.cache[channel_id].user_ids():
+                await api.announce_part(
+                    self.aio_session,
+                    channel_id,
+                    user_id,
+                )
+            self.cache.pop(channel_id)
+            self.sub_maps.pop(channel_id)
 
-        await self.delete_eventsub_subscription(
-            self.sub_maps[channel_id],
-            token_for=self.bot_id,
-        )
-
-        self.cache.pop(channel_id)
-        self.sub_maps.pop(channel_id)
         LOGGER.info("leaving channel %s successful", channel_id)
