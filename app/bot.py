@@ -126,6 +126,7 @@ class StreamBot(commands.Bot):
         sub = await self.subscribe_websocket(payload=subscription, as_bot=True)
 
         if not sub:
+            LOGGER.info("failed to join channel")
             return
 
         self.sub_maps[channel_id] = sub["data"][0]["id"]
@@ -138,11 +139,6 @@ class StreamBot(commands.Bot):
             LOGGER.error("failed to leave channel %s: bot not in channel", channel_id)
             return
 
-        await self.delete_eventsub_subscription(
-            self.sub_maps[channel_id],
-            token_for=self.bot_id,
-        )
-
         for user_id in await self.cache[channel_id].user_ids():
             await api.announce_part(
                 self.aio_session,
@@ -150,5 +146,11 @@ class StreamBot(commands.Bot):
                 user_id,
             )
 
+        await self.delete_eventsub_subscription(
+            self.sub_maps[channel_id],
+            token_for=self.bot_id,
+        )
+
         self.cache.pop(channel_id)
+        self.sub_maps.pop(channel_id)
         LOGGER.info("leaving channel %s successful", channel_id)
